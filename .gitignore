@@ -1,0 +1,30 @@
+# Executables & Binaries
+*.exe
+*.out
+*.app
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+
+# Build Directories
+/build/
+/bin/
+/obj/
+/x64/
+/Debug/
+/Release/
+
+# IDE & Editor Files
+.vscode/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+.DS_Store
+
+# Doxygen generated documentation
+doc/html/
+doc/latex/
+*.tag
