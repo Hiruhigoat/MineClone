@@ -20,10 +20,12 @@ void move_camera(vec3 movement);
 void tilt_camera(float sensitivity);
 
 vec3 get_camera_position(void);
+vec2 get_camera_chunk_position(void);
 vec3 get_camera_directon(void);
 float get_camera_fov(void);
 
 void update_camera(mat4 *view, mat4 *proj);
+
 
 
 #endif

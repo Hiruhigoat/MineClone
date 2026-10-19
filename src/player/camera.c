@@ -21,6 +21,11 @@ void camera_set_fov(float fov)
     camera.fov = fov;
 }
 vec3 get_camera_position() {return camera.position;}
+vec2 get_camera_chunk_position(void)
+{
+    return (vec2){(int)(get_camera_position().x / 16), (int)(get_camera_position().z / 16)};
+}
+
 vec3 get_camera_directon() {return camera.direction;}
 float get_camera_fov() {return camera.fov;}
 
@@ -57,6 +62,4 @@ void update_camera(mat4 *view, mat4 *proj)
 
     // Get the projection matric to map the scene onto the clipping planes
     *proj = perspective(camera.fov, 16.0f / 9.0f, 0.3f, 1000.0f);
-
-
 }

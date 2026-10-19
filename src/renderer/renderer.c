@@ -7,10 +7,7 @@ mat4 proj;
 GLuint tex;
 GLuint shader_program;
 
-float render_distance = 1.0f;
-int rendered_chunks;
-
-Chunk **world;
+World world;
 
 vec4 block_color;
 
@@ -49,7 +46,7 @@ bool renderer_init(HWND hwnd)
 
     // Intialize camera
     block_color            = (vec4){1.0f};
-    vec3  camera_position  = (vec3){28.0f, 10.0f, -30.0f};
+    vec3  camera_position  = (vec3){8.0f, 0.0f, 8.0f};
     vec3  camera_direction = (vec3){1.0f , 1.0f ,   1.0f};
     float camera_fov       = 100.0f;
     camera_set_pos(camera_position);
@@ -155,19 +152,7 @@ bool renderer_init(HWND hwnd)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
 
-    
-    rendered_chunks = (render_distance * 2) + 1;
-    world = malloc(rendered_chunks * rendered_chunks * sizeof(Chunk*));
-    
-    for (int z = 0; z < rendered_chunks; z++)
-    {
-        for (int x = 0; x < rendered_chunks; x++)
-        {
-            world[(x * rendered_chunks) + z] = create_chunk((vec3) {(float) x, -256.0f ,(float) z});
-            create_chunk_mesh(world[(x * rendered_chunks) + z]);
-        }
-    }
-
+    world_init();
 
     // Load and compile shaders
     load_shader(&vertex_shader, GL_VERTEX_SHADER, "assets/shaders/vertex/test.vert");
@@ -312,12 +297,14 @@ bool renderer_update(HDC hdc)
         glUniform4f(glGetUniformLocation(shader_program, "color"), 1, 1, 1, 1); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (int z = 0; z < rendered_chunks; z++)
+        for (int j = 0; j < surronding_render; j++)
         {
-            for (int x = 0; x < rendered_chunks; x++)
+            for (int i = 0; i < surronding_render; i++)
             {
-                glBindVertexArray(world[(x * rendered_chunks) + z]->mesh.vao);
-                glDrawArrays(GL_TRIANGLES, 0,world[(x * rendered_chunks) + z]->mesh.vertex_count);
+                world = get_world();
+                int chunk_index = get_chunk_index(i,j);
+                glBindVertexArray(world[chunk_index]->mesh.vao);
+                glDrawArrays(GL_TRIANGLES, 0, world[chunk_index]->mesh.vertex_count);
             }
         }
 

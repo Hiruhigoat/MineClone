@@ -39,17 +39,17 @@ typedef union
     float data[4 + (36 * 9)];
 } Block;
 
-typedef struct
+typedef struct Chunk
 {
-    vec3 position;
+    vec2 position;
     Block blocks[16][256][16];
     Mesh mesh;
 } Chunk;
 
 void create_block(Block *b, vec2 texture);
 void create_mesh(Block *vertices, int vertex_count);
-Chunk* create_chunk(vec3 position);
+Chunk* create_chunk(vec2 position);
 
-bool create_chunk_mesh(Chunk *chunk);
+bool create_chunk_mesh(World world);
 
 #endif

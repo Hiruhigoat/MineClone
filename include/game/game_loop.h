@@ -5,6 +5,7 @@
 #include "player/movement.h"
 #include <windows.h>
 #include "game/game_loop.h"
+#include "world/world.h"
 
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd);

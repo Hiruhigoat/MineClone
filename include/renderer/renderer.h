@@ -7,7 +7,7 @@
 #include "KHR/khrplatform.h"
 #include "math/vmath.h"
 #include "player/camera.h"
-#include "blocks/blocks.h"
+#include "world/world.h"
 
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB  0x2091
