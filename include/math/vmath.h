@@ -68,6 +68,9 @@ vec4 vec4_sub(vec4 v1, vec4 v2);
 
 vec3 vec3_mult(vec3 v, float mult);
 
+vec2 vec2_mult(vec2 v1, vec2 v2);
+vec2 vec2_translate(vec2 v1, vec2 translation);
+
 float vec4_dot(vec4 v1, vec4 v2);
 float vec3_dot(vec3 v1, vec3 v2);
 

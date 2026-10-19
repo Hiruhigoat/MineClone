@@ -4,6 +4,16 @@
 #include "math/vmath.h"
 #include "renderer/renderer.h"
 
+#define AIR_BLOCK 0
+#define SOLID_BLOCK 1
+
+#define TOP 5
+#define BOTTOM 4
+#define RIGHT 3
+#define LEFT 2
+#define FRONT 1
+#define BACK 0
+
 typedef struct
 {
     GLuint vbo;
@@ -19,8 +29,7 @@ typedef union
 
 typedef struct
 {
-    vec3 coordinate[6];
-    vec2 uv[6];
+    Vertex verticies[6];
 } Face;
 
 typedef union 
@@ -37,7 +46,7 @@ typedef struct
     Mesh mesh;
 } Chunk;
 
-void create_block(Block *b);
+void create_block(Block *b, vec2 texture);
 void create_mesh(Block *vertices, int vertex_count);
 Chunk* create_chunk(vec3 position);
 

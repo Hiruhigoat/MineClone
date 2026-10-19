@@ -35,6 +35,25 @@ vec2 vec2_add(vec2 v1, vec2 v2)
     return sum;
 }
 
+vec2 vec2_mult(vec2 v1, vec2 v2)
+{
+    return (vec2) {v1.x * v2.x, v1.y * v2.y};
+}
+
+vec2 vec2_translate(vec2 v1, vec2 translation)
+{
+    mat3 translation_matrix = MAT3_IDENTITY;
+
+    translation_matrix.col[2] = 
+    (vec3) {
+        .x = translation.x,
+        .y = translation.y,
+        .z = 1.0f
+    };
+
+    return mat3_vec3_mult(translation_matrix, (vec3){v1.x, v1.y, 1}).f_vec2; 
+}
+
 vec3 vec3_add(vec3 v1, vec3 v2)
 {
     vec3 sum = 

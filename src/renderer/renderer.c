@@ -48,9 +48,9 @@ bool renderer_init(HWND hwnd)
     GLint link_status;
 
     // Intialize camera
+    block_color            = (vec4){1.0f};
     vec3  camera_position  = (vec3){28.0f, 10.0f, -30.0f};
-    vec3  camera_direction = (vec3){1.0f, 1.0f, 1.0f};
-    block_color = (vec4){1.0f};
+    vec3  camera_direction = (vec3){1.0f , 1.0f ,   1.0f};
     float camera_fov       = 100.0f;
     camera_set_pos(camera_position);
     camera_set_dir(camera_direction);
@@ -219,7 +219,7 @@ bool renderer_init(HWND hwnd)
     glViewport(0, 0, get_window_width(), get_window_height());
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     return true;
 }
