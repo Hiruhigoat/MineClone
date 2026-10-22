@@ -6,9 +6,6 @@ mat4 view;
 mat4 proj;
 GLuint tex;
 GLuint shader_program;
-
-World world;
-
 vec4 block_color;
 
 // Time keeping shit
@@ -45,9 +42,9 @@ bool renderer_init(HWND hwnd)
     GLint link_status;
 
     // Intialize camera
-    block_color            = (vec4){1.0f};
-    vec3  camera_position  = (vec3){8.0f, 0.0f, 8.0f};
-    vec3  camera_direction = (vec3){1.0f , 1.0f ,   1.0f};
+    block_color            = (vec4){1.0f, 1.0f, 1.0f, 1.0f};
+    vec3  camera_position  = (vec3){8.0f, 5.0f, 8.0f};
+    vec3  camera_direction = (vec3){0.0f , 0.0f ,   -1.0f};
     float camera_fov       = 100.0f;
     camera_set_pos(camera_position);
     camera_set_dir(camera_direction);
@@ -152,7 +149,6 @@ bool renderer_init(HWND hwnd)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
 
-    world_init();
 
     // Load and compile shaders
     load_shader(&vertex_shader, GL_VERTEX_SHADER, "assets/shaders/vertex/test.vert");
@@ -296,17 +292,13 @@ bool renderer_update(HDC hdc)
         glUniformMatrix4fv(glGetUniformLocation(shader_program, "proj"), 1, GL_FALSE, (GLfloat *) &proj); 
         glUniform4f(glGetUniformLocation(shader_program, "color"), 1, 1, 1, 1); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        for (int j = 0; j < surronding_render; j++)
+        
+        for (size_t i = 0; i < surronding_render * surronding_render; i++)
         {
-            for (int i = 0; i < surronding_render; i++)
-            {
-                world = get_world();
-                int chunk_index = get_chunk_index(i,j);
-                glBindVertexArray(world[chunk_index]->mesh.vao);
-                glDrawArrays(GL_TRIANGLES, 0, world[chunk_index]->mesh.vertex_count);
-            }
+            glBindVertexArray(get_world()[i]->mesh.vao);
+            glDrawArrays(GL_TRIANGLES, 0, get_world()[i]->mesh.vertex_count);
         }
+        
 
         SwapBuffers(hdc);
         

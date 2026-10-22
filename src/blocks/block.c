@@ -1,6 +1,11 @@
 #include "blocks/blocks.h"
 
-const int terrian_height = 60;
+#define STB_PERLIN_IMPLEMENTATION
+#include "vendor/stb_perlin.h"
+
+
+int base_terrian_height = 50;
+Face facing_air[6];
 
 static Vertex unit_block_verticies[36] = {
         // x  |   y   |  z         u    |    v
@@ -41,13 +46,10 @@ static Vertex unit_block_verticies[36] = {
          0.0f,  1.0f,  1.0f,     0.0f,      0.03125f,
          0.0f,  1.0f,  0.0f,     0.0f,      0.0f
 };
-World world;
 
-Block null_block = {
-    .position = (vec3){0, 256 + terrian_height, 0},
-    .type = AIR_BLOCK,
-    .vertices = (float){0,0,0,0,0}
-};
+World full_world;
+World loaded_world;
+
 void create_block(Block *b, vec2 texture)
 {
     for (size_t i = 0; i < 36; i++)
@@ -55,262 +57,91 @@ void create_block(Block *b, vec2 texture)
         b->vertices[i].coordinate = vec3_add(unit_block_verticies[i].coordinate, b->position);
         b->vertices[i].uv = vec2_add(unit_block_verticies[i].uv, vec2_mult(texture, (vec2){0.015625f, 0.03125f}));
     }
+    int terrian_height = base_terrian_height + (stb_perlin_fbm_noise3(b->position.x * 0.01, 0.0f , b->position.z * 0.01, 2.0f, 0.5f, 6) * 10);
+    b->type = (b->position.y > terrian_height) ? AIR_BLOCK : SOLID_BLOCK;
 }
 
 Chunk* create_chunk(vec2 position)
 {
     Chunk *chunk = malloc(sizeof(Chunk));
     chunk->position = position;
-    
+    chunk->mesh.vao = 0;
+    chunk->mesh.vbo = 0;
+    chunk->mesh.vertex_count = 0;
+
+
     for (int j = 0; j < 256; j++)
     {
         for (int i = 0; i < 16; i++)
         {
             for (int k = 0; k < 16; k++)
             {
+                
                 chunk->blocks[i][j][k].position = 
                     vec3_add((vec3){16 * position.x, -64.0f, 16 * position.y}, (vec3){i, j, k});
                 
-                    create_block(&chunk->blocks[i][j][k], (vec2){26,24});
-                chunk->blocks[i][j][k].type = (j > terrian_height) ? AIR_BLOCK : SOLID_BLOCK;
+                create_block(&chunk->blocks[i][j][k], (vec2){26,24});
+                
             }
         }
     }
+
     return chunk;
-}
-
-
-
-Face* faces_air(Chunk *chunk, Block block, int *num_of_faces)
-{
-    world = get_world();
-    Block adjacent_chunk_block;
-    Block adjacent_chunk_2_block;
-    Face *facing_air;
-    int chunk_index = get_chunk_index(chunk->position.x, chunk->position.y);
-    int adjacent_chunk_index;
-    int adjacent_chunk_2_index;
-    int x = block.position.x;
-    int y = block.position.y;
-    int z = block.position.z;
-
-
-    if ((y == 0) || (y == 255) || block.type == AIR_BLOCK)
-        return NULL;
-
-    switch (x)
-    {
-        case 0:
-        {
-            switch (z)
-            {
-                case 0:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x - 1, chunk->position.y);
-                    adjacent_chunk_2_index = get_chunk_index(chunk->position.x, chunk->position.y - 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[15][y][0];
-                    adjacent_chunk_2_block = world[adjacent_chunk_2_index]->blocks[0][y][15];
-                    if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) && ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 3 : 2;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[BACK], sizeof(Face));
-                        memcpy(&facing_air[1], &block.face[LEFT], sizeof(Face));
-                        if (*num_of_faces == 3)
-                            memcpy(&facing_air[2], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    } else if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) || ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        int direction = (world[adjacent_chunk_index] == NULL) ? LEFT : BACK;
-                        memcpy(&facing_air[0], &block.face[direction], sizeof(Face));
-                        if (*num_of_faces == 2)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                case 15:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x - 1, chunk->position.y);
-                    adjacent_chunk_2_index = get_chunk_index(chunk->position.x, chunk->position.y + 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[15][y][15];
-                    adjacent_chunk_2_block = world[adjacent_chunk_2_index]->blocks[0][y][0];
-                    if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) && ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 3 : 2;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[FRONT], sizeof(Face));
-                        memcpy(&facing_air[1], &block.face[LEFT], sizeof(Face));
-                        if (*num_of_faces == 3)
-                            memcpy(&facing_air[2], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    } else if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) || ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        int direction = (world[adjacent_chunk_index] == NULL) ? LEFT : FRONT;
-                        memcpy(&facing_air[0], &block.face[direction], sizeof(Face));
-                        if (*num_of_faces == 2)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                default:
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x - 1, chunk->position.y);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[15][y][z];
-                    if ((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[LEFT], sizeof(Face));
-                        if (*num_of_faces == 1)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-            }
-        }
-        case 15:
-        {
-            switch (z)
-            {
-                case 0:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x + 1, chunk->position.y);
-                    adjacent_chunk_2_index = get_chunk_index(chunk->position.x, chunk->position.y - 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[0][y][0];
-                    adjacent_chunk_2_block = world[adjacent_chunk_2_index]->blocks[15][y][15];
-                    if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) && ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 3 : 2;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[BACK], sizeof(Face));
-                        memcpy(&facing_air[1], &block.face[RIGHT], sizeof(Face));
-                        if (*num_of_faces == 3)
-                            memcpy(&facing_air[2], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    } else if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) || ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        int direction = (world[adjacent_chunk_index] == NULL) ? RIGHT : BACK;
-                        memcpy(&facing_air[0], &block.face[direction], sizeof(Face));
-                        if (*num_of_faces == 2)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                case 15:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x + 1, chunk->position.y);
-                    adjacent_chunk_2_index = get_chunk_index(chunk->position.x, chunk->position.y + 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[0][y][15];
-                    adjacent_chunk_2_block = world[adjacent_chunk_2_index]->blocks[15][y][0];
-                    if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) && ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 3 : 2;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[FRONT], sizeof(Face));
-                        memcpy(&facing_air[1], &block.face[RIGHT], sizeof(Face));
-                        if (*num_of_faces == 3)
-                            memcpy(&facing_air[2], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    } else if (((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK)) || ((world[adjacent_chunk_2_index] == NULL) || (adjacent_chunk_2_block.type == AIR_BLOCK)))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        int direction = (world[adjacent_chunk_index] == NULL) ? RIGHT : FRONT;
-                        memcpy(&facing_air[0], &block.face[direction], sizeof(Face));
-                        if (*num_of_faces == 2)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                default:
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x + 1, chunk->position.y);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[0][y][z];
-                    if ((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[RIGHT], sizeof(Face));
-                        if (*num_of_faces == 1)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-            }
-            
-        }
-        default:
-            switch (z)
-            {
-                case 0:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x, chunk->position.y - 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[x][y][15];
-                    if ((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[BACK], sizeof(Face));
-                        if (*num_of_faces == 1)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                case 15:
-                {
-                    adjacent_chunk_index = get_chunk_index(chunk->position.x, chunk->position.y + 1);
-                    adjacent_chunk_block = world[adjacent_chunk_index]->blocks[x][y][0];
-                    if ((world[adjacent_chunk_index] == NULL) || (adjacent_chunk_block.type == AIR_BLOCK))
-                    {
-                        *num_of_faces = (chunk->blocks[x][y + 1][z].type == AIR_BLOCK) ? 2 : 1;
-                        facing_air = malloc(*num_of_faces * sizeof(Face));
-                        memcpy(&facing_air[0], &block.face[FRONT], sizeof(Face));
-                        if (*num_of_faces == 1)
-                            memcpy(&facing_air[1], &block.face[TOP], sizeof(Face));
-                        return facing_air;
-                    }
-                    return NULL;
-                }
-                default:
-                    break;
-            }
-    }
-    
-
 }
 
 Block get_block(vec3 position)
 {
-    world = get_world();
+    full_world = get_world();
     vec2 chunk_position = block_to_chunk_pos(position);
-    if (!chunk_exists(chunk_position))
+    int chunk_index = get_chunk_index((int)chunk_position.x, (int)chunk_position.y);
+
+    if ((full_world[chunk_index]->position.x != chunk_position.x) || (full_world[chunk_index]->position.y != chunk_position.y))
+    {
+        Block null_block = {
+        .position = position,
+        .type = AIR_BLOCK,
+        .vertices = (float){0.0f}
+        };
         return null_block;
-    int chunk_index = get_chunk_index(chunk_position.x, chunk_position.y);
+    }
+    
+    
     vec3 block_chunk_position;
     block_chunk_position.x = position.x - (16 * chunk_position.x);
-    block_chunk_position.y = (int) position.y;
+    block_chunk_position.y = (int) position.y + 64;
     block_chunk_position.z = position.z - (16 * chunk_position.y);
 
-    Block block = world[chunk_index]->blocks[(int)block_chunk_position.x][(int)block_chunk_position.y][(int)block_chunk_position.z];
+    if (block_chunk_position.y <= -1 || block_chunk_position.y >= 256)
+    {
+        Block null_block = {
+            .position = vec3_add(block_chunk_position, (vec3){0,1,0}),
+            .type = AIR_BLOCK,
+            .vertices = (float){0.0f}
+        };
+        return null_block;
+    }
+
+    Block block = full_world[chunk_index]->blocks[(int)block_chunk_position.x][(int)block_chunk_position.y][(int)block_chunk_position.z];
     return block;
 }
 
 vec2 block_to_chunk_pos(vec3 block_position)
 {
-    return (vec2){(int)floorf((block_position.x / 16)), (int)floorf((block_position.z / 16))};
+    vec2 block_to_chunk_pos = (vec2){(int)floorf((block_position.x / 16)), (int)floorf((block_position.z / 16))};
+    return block_to_chunk_pos;
+}
+
+Block* get_adjacent_blocks(Block block)
+{
+
 }
 
 Face* check_faces(Block block, int *num_of_faces)
 {
+    *num_of_faces = 0;
+    if (block.type == AIR_BLOCK)
+        return NULL;
+
     Block adjacent_blocks[6]= {
         get_block(vec3_add(block.position, (vec3){0,0,-1})),
         get_block(vec3_add(block.position, (vec3){0,0,1})),
@@ -327,14 +158,12 @@ Face* check_faces(Block block, int *num_of_faces)
     if (*num_of_faces == 0)
         return NULL;
 
-    Face *facing_air = malloc(*num_of_faces * sizeof(Face));
-
     int index = 0;
     for (size_t i = 0; i < 6; i++)
     {
         if ((adjacent_blocks[i].type == AIR_BLOCK))
         {
-            memcpy(&facing_air[index], &block.face[i], sizeof(Face));
+            facing_air[index] = block.face[i];
             index++;
         }
     }
@@ -343,64 +172,58 @@ Face* check_faces(Block block, int *num_of_faces)
 }
 
 
-bool create_chunk_mesh(World world)
-{
-    world = get_world();
-    Vertex *verticies;
-    Face *faces;
-    int number_of_block_faces;
-    
-    int count_faces;
-    int chunk_index;
 
-    for (int cY = 0; cY < surronding_render; cY++)
+void create_chunk_mesh(Chunk* chunk)
+{
+    Face *faces;
+    Vertex *verticies = malloc(255 * 16 * 16 * 6 * 6 * sizeof(Vertex));
+    chunk->mesh.vertex_count = 0;
+
+    int number_of_block_faces;
+
+    for (int j = 30; j < 256; j++)
     {
-        for (int cX = 0; cX < surronding_render; cX++)
+        for (int i = 0; i < 16; i++)
         {
-            faces = NULL;
-            chunk_index = get_chunk_index(cX, cY);
-            count_faces = 0;
-            for (int j = 0; j < 256; j++)
+            for (int k = 0; k < 16; k++)
             {
-                for (int i = 0; i < 16; i++)
+                faces = check_faces(chunk->blocks[i][j][k], &number_of_block_faces);
+                if (faces != NULL)
                 {
-                    for (int k = 0; k < 16; k++)
+                    for (size_t n = 0; n < number_of_block_faces; n++)
                     {
-                        // faces = faces_air(world[chunk_index], world[chunk_index]->blocks[i][j][k], &number_of_block_faces);
-                        faces = check_faces(world[chunk_index]->blocks[i][j][k], &number_of_block_faces);
-                        if (faces != NULL && world[chunk_index]->blocks[i][j][k].type != AIR_BLOCK)
+                        for (size_t f = 0; f < 6; f++)
                         {
-                            verticies = realloc(verticies, (count_faces + number_of_block_faces) * sizeof(Face));
-                            memcpy(&verticies[count_faces * 6], faces, number_of_block_faces * sizeof(Face));    
-                            count_faces += number_of_block_faces;
+                            verticies[chunk->mesh.vertex_count] = faces[n].verticies[f]; 
+                            chunk->mesh.vertex_count++;
                         }
-                        free(faces);
                     }
                 }
             }
-            world[chunk_index]->mesh.vertex_count = count_faces * 6;
-
-            // Generate and bind the vertex array object.
-            glGenVertexArrays(1, &world[chunk_index]->mesh.vao);
-            glBindVertexArray(world[chunk_index]->mesh.vao);
-
-            // Generate and bind the vertex buffer object. Add the data from verticies  
-            glGenBuffers(1, &world[chunk_index]->mesh.vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, world[chunk_index]->mesh.vbo);
-            
-            size_t total_size = count_faces * sizeof(Face);
-            glBufferData(GL_ARRAY_BUFFER, total_size, verticies, GL_STATIC_DRAW);
-            free(verticies);
-
-            // Describe the vertex input and enable it
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*) (3 * (sizeof(GLfloat))));
-
-            glBindVertexArray(0);
         }
     }
 
-    return true;
+    int mesh_size = chunk->mesh.vertex_count * sizeof(Vertex);
+
+    // Generate and bind the vertex array object.
+    // glDeleteVertexArrays(1, &chunk->mesh.vao);
+    glGenVertexArrays(1, &chunk->mesh.vao);
+    glBindVertexArray(chunk->mesh.vao);
+    
+    // Generate and bind the vertex buffer object. Add the data from verticies  
+    // glDeleteBuffers(1, &chunk->mesh.vbo);
+    glGenBuffers(1, &chunk->mesh.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh_size, verticies, GL_DYNAMIC_DRAW);
+    
+    free(verticies);
+    
+    // Describe the vertex input and enable it
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*) (3 * (sizeof(GLfloat))));
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }

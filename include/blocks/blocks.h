@@ -3,6 +3,7 @@
 
 #include "math/vmath.h"
 #include "renderer/renderer.h"
+#include "world/world.h"
 
 #define AIR_BLOCK 0
 #define SOLID_BLOCK 1
@@ -14,12 +15,16 @@
 #define FRONT 1
 #define BACK 0
 
+#ifndef MESH_DEF
+#define MESH_DEF
+
 typedef struct
 {
     GLuint vbo;
     GLuint vao;
     int vertex_count;
 } Mesh;
+#endif
 
 typedef union
 {
@@ -44,12 +49,20 @@ typedef struct Chunk
     vec2 position;
     Block blocks[16][256][16];
     Mesh mesh;
+    bool edited;
 } Chunk;
 
+typedef struct Chunk Chunk;
+typedef Chunk **World;
+
 void create_block(Block *b, vec2 texture);
-void create_mesh(Block *vertices, int vertex_count);
 Chunk* create_chunk(vec2 position);
 
-bool create_chunk_mesh(World world);
+void create_chunk_mesh(Chunk* chunk);
+
+
+Block get_block(vec3 position);
+vec2 block_to_chunk_pos(vec3 block_position);
+Face* check_faces(Block block, int *num_of_faces);
 
 #endif

@@ -1,5 +1,14 @@
 CC = gcc
-CFLAGS = -std=c11 -g -Iinclude 
+CFLAGS  = -std=c11 \
+          -O0 \
+          -g3 \
+          -fno-omit-frame-pointer \
+          -Iinclude \
+          -isystem include/vendors \
+          -Wnull-dereference \
+          -Wuse-after-free \
+          -Wfree-nonheap-object
+
 LDFLAGS = -luser32 -lgdi32 -lopengl32
 
 

@@ -21,9 +21,10 @@ void camera_set_fov(float fov)
     camera.fov = fov;
 }
 vec3 get_camera_position() {return camera.position;}
+
 vec2 get_camera_chunk_position(void)
 {
-    return (vec2){(int)(get_camera_position().x / 16), (int)(get_camera_position().z / 16)};
+    return block_to_chunk_pos(get_camera_position());
 }
 
 vec3 get_camera_directon() {return camera.direction;}
