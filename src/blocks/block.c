@@ -160,6 +160,7 @@ vec2 block_to_chunk_pos(vec3 block_position)
 Face* check_faces(Chunk* chunk, vec3 block_chunk_position, int *num_of_faces)
 {
     *num_of_faces = 0;
+    
 
     vec2 chunk_position = chunk->position;
     vec3 block_position = vec3_add((vec3){16 * chunk_position.x, -64.0f, 16 * chunk_position.y}, block_chunk_position);
@@ -168,14 +169,38 @@ Face* check_faces(Chunk* chunk, vec3 block_chunk_position, int *num_of_faces)
     if (!BLOCK_PROPERTIES[block_type].is_solid)
         return NULL;
 
-    Block adjacent_blocks[6]= {
-        get_block(vec3_add(block_position, (vec3){0,0,-1})),
-        get_block(vec3_add(block_position, (vec3){0,0,1})),
-        get_block(vec3_add(block_position, (vec3){-1,0,0})),
-        get_block(vec3_add(block_position, (vec3){1,0,0})),
-        get_block(vec3_add(block_position, (vec3){0,-1,0})),
-        get_block(vec3_add(block_position, (vec3){0,1,0}))
-    };
+    Block adjacent_blocks[6];
+
+    if (block_chunk_position.x == 0)
+        adjacent_blocks[2] = get_block(vec3_add(block_position, (vec3){-1, 0, 0}));
+    else
+        adjacent_blocks[2] = chunk->blocks[(int) block_chunk_position.x - 1][(int) block_chunk_position.y][(int) block_chunk_position.z];
+
+    if (block_chunk_position.x == 15)
+        adjacent_blocks[3] = get_block(vec3_add(block_position, (vec3){1, 0, 0}));
+    else
+        adjacent_blocks[3] = chunk->blocks[(int) block_chunk_position.x + 1][(int) block_chunk_position.y][(int) block_chunk_position.z];
+
+    if (block_chunk_position.y == 0)
+        adjacent_blocks[4] = get_block(vec3_add(block_position, (vec3){0, -1, 0}));
+    else
+        adjacent_blocks[4] = chunk->blocks[(int) block_chunk_position.x][(int) block_chunk_position.y - 1][(int) block_chunk_position.z];
+
+    if (block_chunk_position.y == 255)
+        adjacent_blocks[5] = get_block(vec3_add(block_position, (vec3){0, 1, 0}));
+    else
+        adjacent_blocks[5] = chunk->blocks[(int) block_chunk_position.x][(int) block_chunk_position.y + 1][(int) block_chunk_position.z];
+
+
+    if (block_chunk_position.z == 0)
+        adjacent_blocks[0] = get_block(vec3_add(block_position, (vec3){0, 0, -1}));
+    else
+        adjacent_blocks[0] = chunk->blocks[(int) block_chunk_position.x][(int) block_chunk_position.y][(int) block_chunk_position.z - 1];
+
+    if (block_chunk_position.z == 15)
+        adjacent_blocks[1] = get_block(vec3_add(block_position, (vec3){0, 0, 1}));
+    else
+        adjacent_blocks[1] = chunk->blocks[(int) block_chunk_position.x][(int) block_chunk_position.y][(int) block_chunk_position.z + 1];
     
     for (size_t i = 0; i < 6; i++)
         if (!BLOCK_PROPERTIES[adjacent_blocks[i]].is_solid)
@@ -190,9 +215,7 @@ Face* check_faces(Chunk* chunk, vec3 block_chunk_position, int *num_of_faces)
         if (!BLOCK_PROPERTIES[adjacent_blocks[i]].is_solid)
         {
             Face face =
-            {
-
-                
+            {   
                 .verticies = {
                     vec3_add(unit_block_faces[i].verticies[0].coordinate, block_position),
                     vec2_add(unit_block_faces[i].verticies[0].uv, vec2_mult(BLOCK_PROPERTIES[block_type].uv_top, atlas)),
