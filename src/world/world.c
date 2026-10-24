@@ -1,7 +1,7 @@
 #include "world/world.h"
 
 static World world;
-int render_distance = 2;
+int render_distance = 8;
 int chunk_index;
 int number_of_chunks;
 int surronding_render;
@@ -37,6 +37,7 @@ void world_init()
 void generate_chunks(vec2 position)
 {
     int unloaded_index;
+    int unloaded_index2;
     vec2 unloaded_chunk_position;
     
     if (position.x != 0)
@@ -46,12 +47,14 @@ void generate_chunks(vec2 position)
         {
             unloaded_index = get_chunk_index(unloaded_chunk_position.x, unloaded_chunk_position.y + n);
             free(world[unloaded_index]);
-            world[unloaded_index] = create_chunk((vec2) {unloaded_chunk_position.x + (position.x * surronding_render), unloaded_chunk_position.y});
+            world[unloaded_index] = create_chunk((vec2) {unloaded_chunk_position.x + (position.x * surronding_render), unloaded_chunk_position.y + n});
         }
         for (size_t i = 0; i < surronding_render; i++)  
         {
             unloaded_index = get_chunk_index(unloaded_chunk_position.x, unloaded_chunk_position.y + i);
+            unloaded_index2 = get_chunk_index(unloaded_chunk_position.x - position.x, unloaded_chunk_position.y + i);
             create_chunk_mesh(world[unloaded_index]); 
+            create_chunk_mesh(world[unloaded_index2]); 
         }
     }
     
@@ -62,12 +65,14 @@ void generate_chunks(vec2 position)
         {
             unloaded_index = get_chunk_index(unloaded_chunk_position.x + n, unloaded_chunk_position.y);
             free(world[unloaded_index]);
-            world[unloaded_index] = create_chunk((vec2) {unloaded_chunk_position.x, unloaded_chunk_position.y + (position.y * surronding_render)});
+            world[unloaded_index] = create_chunk((vec2) {unloaded_chunk_position.x + n, unloaded_chunk_position.y + (position.y * surronding_render)});
         }
         for (size_t i = 0; i < surronding_render; i++)  
         {
             unloaded_index = get_chunk_index(unloaded_chunk_position.x + i, unloaded_chunk_position.y);
+            unloaded_index2 = get_chunk_index(unloaded_chunk_position.x + i, unloaded_chunk_position.y - position.y);
             create_chunk_mesh(world[unloaded_index]); 
+            create_chunk_mesh(world[unloaded_index2]); 
         }
     }
 }

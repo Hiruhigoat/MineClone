@@ -295,8 +295,9 @@ bool renderer_update(HDC hdc)
         
         for (size_t i = 0; i < surronding_render * surronding_render; i++)
         {
-            glBindVertexArray(get_world()[i]->mesh.vao);
-            glDrawArrays(GL_TRIANGLES, 0, get_world()[i]->mesh.vertex_count);
+            Chunk *chunk = get_world()[i];
+            glBindVertexArray(chunk->mesh.vao);
+            glDrawArrays(GL_TRIANGLES, 0, chunk->mesh.vertex_count);
         }
         
 
